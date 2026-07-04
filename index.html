@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mini App</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body{
+    font-family:Arial;
+    text-align:center;
+    background:#222;
+    color:white;
+    margin-top:60px;
+}
+button{
+    padding:12px 25px;
+    font-size:18px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>أهلاً بك</h1>
+
+<p id="name"></p>
+
+<button onclick="hello()">اضغط هنا</button>
+
+<script>
+
+let tg = window.Telegram.WebApp;
+
+tg.expand();
+
+document.getElementById("name").innerHTML =
+"مرحباً " + tg.initDataUnsafe.user.first_name;
+
+function hello(){
+    alert("أهلاً " + tg.initDataUnsafe.user.first_name);
+}
+
+</script>
+
+</body>
+</html>
