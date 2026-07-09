@@ -2,138 +2,364 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تطبيق تليجرام المصغر</title>
-
-<!-- استدعاء مكتبة تليجرام -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- استدعاء خط عربي احترافي -->
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>نظام البحث</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-    /* الإعدادات الأساسية والخلفية الجذابة */
-    body {
-        font-family: 'Cairo', sans-serif;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* تدرج لوني فخم */
-        color: white;
-        overflow: hidden;
-    }
+:root{
+    --bg:#f4f6f8;
+    --surface:#ffffff;
+    --ink:#1c2530;
+    --muted:#64748b;
+    --line:#e2e8f0;
+    --brand:#0f5c56;
+    --brand-dark:#0b4440;
+    --brand-soft:#e6f2f0;
+    --ok:#16803c;
+    --err:#c0392b;
+    --radius:14px;
+}
+*{box-sizing:border-box;}
+body{
+    margin:0;
+    font-family:'Cairo',Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+}
+.wrap{
+    max-width:920px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+}
 
-    /* الحاوية الرئيسية (تأثير الزجاج الشفاف) */
-    .card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 20px;
-        padding: 40px 30px;
-        text-align: center;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        width: 80%;
-        max-width: 350px;
-        /* إخفاء البطاقة افتراضياً حتى نتأكد من تليجرام */
-        display: none; 
-        flex-direction: column;
-        gap: 20px;
-    }
+/* ===== ترحيب ===== */
+.welcome{
+    background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+    color:#fff;
+    border-radius:var(--radius);
+    padding:22px 20px;
+    margin-bottom:16px;
+    box-shadow:0 8px 24px rgba(15,92,86,.25);
+    opacity:0;
+    transform:translateY(-8px);
+    animation:fadeIn .5s ease forwards;
+}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+.welcome h1{
+    margin:0 0 4px;
+    font-size:20px;
+    font-weight:800;
+}
+.welcome p{
+    margin:0;
+    font-size:14px;
+    opacity:.9;
+}
 
-    /* العناوين والنصوص */
-    h1 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
+/* ===== حالة الاتصال ===== */
+#status{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:999px;
+    background:var(--brand-soft);
+    color:var(--brand-dark);
+    margin-bottom:18px;
+}
+#status.err{background:#fdecea;color:var(--err);}
 
-    p {
-        margin: 0;
-        font-size: 18px;
-        color: #e0e0e0;
-    }
+/* ===== بطاقة البحث ===== */
+.search-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:20px;
+}
+.search-row{
+    display:flex;
+    gap:10px;
+}
+.search-row input{
+    flex:1;
+    min-width:0;
+}
+input,select{
+    width:100%;
+    padding:12px 14px;
+    font-size:15px;
+    font-family:inherit;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s;
+}
+input:focus,select:focus{border-color:var(--brand);}
+button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:10px;
+}
+.btn-search{
+    background:var(--brand);
+    color:#fff;
+    padding:12px 22px;
+    font-size:15px;
+    font-weight:700;
+    white-space:nowrap;
+}
+.btn-search:hover{background:var(--brand-dark);}
+.hint{
+    font-size:12px;
+    color:var(--muted);
+    margin:8px 2px 0;
+}
 
-    #user-name {
-        font-weight: 700;
-        color: #4facfe; /* لون أزرق سماوي مميز للاسم */
-        font-size: 22px;
-    }
+/* ===== فلاتر متقدمة ===== */
+.adv-toggle{
+    background:none;
+    color:var(--brand);
+    font-weight:700;
+    font-size:13px;
+    padding:10px 2px 0;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.adv-toggle .arrow{
+    transition:transform .2s;
+    display:inline-block;
+}
+.adv-toggle.open .arrow{transform:rotate(180deg);}
+.adv-panel{
+    display:none;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+}
+.adv-panel.open{display:grid;}
+.adv-panel .full{grid-column:1/-1;}
+@media (max-width:480px){
+    .adv-panel{grid-template-columns:1fr;}
+}
 
-    /* تصميم الزر */
-    button {
-        background: linear-gradient(45deg, #00c6ff, #0072ff);
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        font-size: 18px;
-        font-weight: 700;
-        font-family: 'Cairo', sans-serif;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4);
-    }
+/* ===== النتائج ===== */
+#resultsMeta{
+    font-size:13px;
+    color:var(--muted);
+    margin:0 2px 10px;
+}
+.results-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:14px;
+}
+.card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+}
+.card h3{
+    margin:0 0 10px;
+    font-size:16px;
+    color:var(--brand-dark);
+    border-bottom:1px solid var(--line);
+    padding-bottom:8px;
+}
+.card dl{
+    margin:0;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:6px 10px;
+    font-size:13.5px;
+}
+.card dt{color:var(--muted);font-weight:600;white-space:nowrap;}
+.card dd{margin:0;}
+.empty,.loading{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--muted);
+    font-size:14px;
+}
+.spinner{
+    width:22px;height:22px;
+    border:3px solid var(--line);
+    border-top-color:var(--brand);
+    border-radius:50%;
+    margin:0 auto 10px;
+    animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-    button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0, 114, 255, 0.6);
-    }
-
-    button:active {
-        transform: translateY(1px);
-    }
+@media (max-width:520px){
+    .search-row{flex-direction:column;}
+    .btn-search{width:100%;}
+}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-    <!-- الواجهة التي ستظهر فقط داخل تليجرام -->
-    <div class="card" id="app-card">
-        <h1>أهلاً وسهلاً</h1>
-        <p>أسعدنا تواجدك،</p>
-        <div id="user-name">جاري التحميل...</div>
-        <button onclick="sayHello()">اضغط هنا للترحيب</button>
+    <div class="welcome">
+        <h1>👋 أهلًا بك</h1>
+        <p>اكتب أي معلومة تعرفها — الاسم، المحافظة، المدينة، أو حتى تفاصيل الحالة — وسنبحث لك في القاعدة.</p>
     </div>
 
+    <div id="status">جاري الاتصال...</div>
+
+    <div class="search-card">
+        <div class="search-row">
+            <input id="txtSmart" placeholder="🔍 ابحث بالاسم، الأب، الكنية، المدينة..." onkeydown="if(event.key==='Enter')searchPerson()">
+            <button class="btn-search" onclick="searchPerson()">بحث</button>
+        </div>
+        <div class="hint">البحث الذكي يشمل: الاسم، الأب، الأم، الكنية، الموقع، المحافظة، المدينة، البلدة، القضية، الملاحظات</div>
+
+        <button class="adv-toggle" id="advToggle" onclick="toggleAdvanced()">
+            <span class="arrow">▾</span> فلاتر متقدمة
+        </button>
+        <div class="adv-panel" id="advPanel">
+            <div>
+                <input id="fName" placeholder="الاسم">
+            </div>
+            <div>
+                <input id="fFather" placeholder="اسم الأب">
+            </div>
+            <div>
+                <input id="fLastname" placeholder="الكنية">
+            </div>
+            <div>
+                <input id="fGovernorate" placeholder="المحافظة">
+            </div>
+            <div>
+                <input id="fCity" placeholder="المدينة">
+            </div>
+            <div>
+                <input id="fCrime" placeholder="القضية">
+            </div>
+            <div class="full">
+                <button class="btn-search" style="width:100%;background:var(--brand-dark)" onclick="searchPerson(true)">بحث بالفلاتر المتقدمة</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsMeta"></div>
+    <div id="results"></div>
+</div>
+
 <script>
-    let tg = window.Telegram.WebApp;
+const client = window.supabase.createClient(
+    "https://uavetysbfqkgcelpfptv.supabase.co",
+    "sb_publishable_lgFCthFJW-_A2BLhLxDTsQ_ZZplERza"
+);
 
-    // الشرط الأساسي: إذا لم يكن الرابط مفتوحاً من تليجرام
-    // tg.platform تكون "unknown" إذا كان متصفحاً عادياً
-    if (tg.platform === "unknown" || Object.keys(tg.initDataUnsafe).length === 0) {
-        
-        // إفراغ الصفحة تماماً وجعلها لا تتجاوب (شاشة صامتة)
-        document.body.innerHTML = "";
-        document.body.style.background = "#000"; // خلفية سوداء للإيهام بأن الرابط لا يعمل
-        
-    } else {
-        
-        // إذا كان مفتوحاً من تليجرام، نظهر الواجهة ونشغل التطبيق
-        tg.ready();
-        tg.expand();
-        
-        // إظهار بطاقة التطبيق
-        document.getElementById("app-card").style.display = "flex";
+const SMART_COLUMNS = ["name","father","mother","lastname","location","governorate","city","town","crime","note"];
+const SELECT_FIELDS = "name,lastname,father,mother,birth,location,governorate,city,town,crime,note,side,extra";
 
-        // جلب اسم المستخدم
-        let firstName = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "يا صديقي";
-        
-        // عرض الاسم في الواجهة
-        document.getElementById("user-name").innerText = firstName;
-        
-        // دالة الزر
-        window.sayHello = function() {
-            if (tg.showAlert) {
-                tg.showAlert("يا هلا فيك " + firstName + "، نورت التطبيق!");
-            } else {
-                alert("يا هلا فيك " + firstName + "، نورت التطبيق!");
-            }
-        };
+function toggleAdvanced(){
+    document.getElementById("advPanel").classList.toggle("open");
+    document.getElementById("advToggle").classList.toggle("open");
+}
+
+async function checkConnection(){
+    const statusEl = document.getElementById("status");
+    const {error} = await client.from("umermuxtar").select("name").limit(1);
+    if(error){
+        statusEl.textContent = "❌ تعذر الاتصال: " + error.message;
+        statusEl.classList.add("err");
+    }else{
+        statusEl.textContent = "✅ متصل بقاعدة البيانات";
     }
-</script>
+}
 
+function escapeLike(v){
+    return v.replace(/[%_]/g, "");
+}
+
+async function searchPerson(advanced){
+    const resultsDiv = document.getElementById("results");
+    const metaDiv = document.getElementById("resultsMeta");
+    resultsDiv.innerHTML = `<div class="loading"><div class="spinner"></div>جاري البحث...</div>`;
+    metaDiv.textContent = "";
+
+    let query = client.from("umermuxtar").select(SELECT_FIELDS);
+    let hasFilter = false;
+
+    if(advanced){
+        const map = {
+            name: document.getElementById("fName").value.trim(),
+            father: document.getElementById("fFather").value.trim(),
+            lastname: document.getElementById("fLastname").value.trim(),
+            governorate: document.getElementById("fGovernorate").value.trim(),
+            city: document.getElementById("fCity").value.trim(),
+            crime: document.getElementById("fCrime").value.trim(),
+        };
+        Object.entries(map).forEach(([col,val])=>{
+            if(val){
+                query = query.ilike(col, "%"+escapeLike(val)+"%");
+                hasFilter = true;
+            }
+        });
+    }else{
+        const keyword = document.getElementById("txtSmart").value.trim();
+        if(keyword){
+            const kw = escapeLike(keyword);
+            const orExpr = SMART_COLUMNS.map(c=>`${c}.ilike.%${kw}%`).join(",");
+            query = query.or(orExpr);
+            hasFilter = true;
+        }
+    }
+
+    if(!hasFilter){
+        resultsDiv.innerHTML = `<div class="empty">اكتب كلمة بحث واحدة على الأقل ثم اضغط بحث</div>`;
+        return;
+    }
+
+    const {data, error} = await query.limit(50);
+
+    if(error){
+        resultsDiv.innerHTML = `<div class="empty">❌ ${error.message}</div>`;
+        return;
+    }
+
+    if(!data || data.length === 0){
+        resultsDiv.innerHTML = `<div class="empty">لا توجد نتائج مطابقة 🔎</div>`;
+        return;
+    }
+
+    metaDiv.textContent = `تم العثور على ${data.length} نتيجة`;
+
+    resultsDiv.innerHTML = `<div class="results-grid">` + data.map(r=>`
+        <div class="card">
+            <h3>${r.name ?? ""} ${r.lastname ?? ""}</h3>
+            <dl>
+                <dt>الأب</dt><dd>${r.father ?? "-"}</dd>
+                <dt>الأم</dt><dd>${r.mother ?? "-"}</dd>
+                <dt>الميلاد</dt><dd>${r.birth ?? "-"}</dd>
+                <dt>الموقع</dt><dd>${r.location ?? "-"}</dd>
+                <dt>المحافظة</dt><dd>${r.governorate ?? "-"}</dd>
+                <dt>المدينة</dt><dd>${r.city ?? "-"}</dd>
+                <dt>البلدة</dt><dd>${r.town ?? "-"}</dd>
+                <dt>القضية</dt><dd>${r.crime ?? "-"}</dd>
+                <dt>الملاحظات</dt><dd>${r.note ?? "-"}</dd>
+                <dt>الجهة</dt><dd>${r.side ?? "-"}</dd>
+                <dt>إضافات</dt><dd>${r.extra ?? "-"}</dd>
+            </dl>
+        </div>
+    `).join("") + `</div>`;
+}
+
+checkConnection();
+</script>
 </body>
 </html>
